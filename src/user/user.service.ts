@@ -12,55 +12,99 @@ export class UserService {
     @InjectRepository(User)
     private usersRepository: Repository<User>,
     @InjectRepository(Particulars)
-    private userParticulars:  Repository<Particulars>,
+    private userParticulars: Repository<Particulars>,
   ) {}
   async create(createUserDto: CreateUserDto) {
-    const userVo = {
-      password:createUserDto.password,
-      username:createUserDto.username
-    }
-    const particularsVo = {
-      name:createUserDto.name,
-      email:createUserDto.email,
-      phone:createUserDto.phone,
-    }
-    const userTmp = await this.usersRepository.create(userVo);
+    const { password, username, name, email, phone } = createUserDto;
+
     try {
-      await this.usersRepository.save(userTmp);
-      const particularsTmp = this.userParticulars.create({
-        ...particularsVo,
-        user: userTmp, // 关联用户
+      // 创建 User 实体，并关联 Particulars
+      const user = this.usersRepository.create({
+        password,
+        username,
       });
-      await this.userParticulars.save(particularsTmp);
+
+      // 保存 User 实体
+      await this.usersRepository.save(user);
+      // 创建 Particulars 实体
+      const particulars = this.userParticulars.create({
+        name,
+        email,
+        phone,
+        user: user,
+      });
+
+      // 保存更新后的 Particulars 实体
+      await this.userParticulars.save(particulars);
     } catch (error) {
-      throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST, {
-        cause: error,
-      });
+      if (error.sqlState === '23000') {
+        throw new HttpException('用户名已存在', HttpStatus.BAD_REQUEST, {
+          cause: error,
+        });
+      }
+      throw new HttpException(
+        '创建用户失败',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+        { cause: error },
+      );
     }
   }
 
-  findAll() {
-    // const user = this.usersRepository.find({
-    //   skip: 0,
-    //   take: 10,
-    //   select: {
-    //     id: true,
-    //     name: true,
-    //   },
-    // });
-    // return user;
-    return 1
-  }
+  async findAll(pageNum: number, pageSize: number): Promise<User[]> {
+    const skip = (pageNum - 1) * pageSize;
+    const users = await this.usersRepository.find({
+      skip: Math.max(skip, 0), // 确保 skip 不为负数
+      take: pageSize,
+      relations: ['particulars'],
+      select: {
+        id: true,
+        username: true,
+        particulars: {
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
+    });
 
+    return users;
+  }
   findOne(id: number) {
-    const user = this.usersRepository.find({
+    const user = this.usersRepository.findOne({
       where: { id: id },
+      relations: ['particulars'],
+      select: {
+        id: true,
+        username: true,
+        particulars: {
+          name: true,
+          email: true,
+          phone: true,
+        },
+      },
     });
     return user;
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(userId: number, id: number, updateUserDto: UpdateUserDto) {
+    if (id !== userId) {
+      throw new HttpException('用户ID不匹配', HttpStatus.BAD_REQUEST);
+    }
+    const user = await this.findOne(id);
+    if (!user) {
+      throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
+    }
+    const userPo = {
+      username: updateUserDto.username,
+      password: updateUserDto.password,
+      particulars: {
+        name: updateUserDto.name,
+        email: updateUserDto.email,
+        phone: updateUserDto.phone,
+      },
+    };
+    const newUser = this.usersRepository.merge(user, userPo);
+    return await this.usersRepository.save(newUser);
   }
 
   remove(id: number) {

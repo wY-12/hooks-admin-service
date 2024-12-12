@@ -14,7 +14,7 @@ export class Particulars {
   @Column()
   phone: string;
 
-  @OneToOne(() => User, (User) => User.id)
+  @OneToOne(() => User)
   @JoinColumn()
   user: User;
 }
