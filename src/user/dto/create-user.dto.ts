@@ -4,15 +4,18 @@ export class CreateUserDto {
   @IsString()
   name: string;
 
+  @IsString()
+  username: string;
+
   @IsEmail()
-  @IsOptional()
+  // @IsOptional()
   email: string;
 
   @IsString()
   password: string;
 
   @IsString()
-  @IsOptional()
+  // @IsOptional()
   @IsPhoneNumber('CN') // 假设电话号码格式为中国大陆格式
-  phone?: string;
+  phone: string;
 }

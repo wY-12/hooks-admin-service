@@ -14,5 +14,5 @@ export class Role {
 
   @OneToOne(() => User)
   @JoinColumn()
-  role: User;
+  user: User;
 }
