@@ -3,7 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { Repository } from 'typeorm';
+import { getConnection, Repository } from 'typeorm';
 import { Particulars } from './entities/particulars.entity';
 
 @Injectable()
@@ -97,17 +97,45 @@ export class UserService {
     const userPo = {
       username: updateUserDto.username,
       password: updateUserDto.password,
-      particulars: {
-        name: updateUserDto.name,
-        email: updateUserDto.email,
-        phone: updateUserDto.phone,
-      },
     };
     const newUser = this.usersRepository.merge(user, userPo);
-    return await this.usersRepository.save(newUser);
+    await this.usersRepository.save(newUser);
+    // await this.updateParticulars(user, updateUserDto);
+    return '更新成功';
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async updateParticulars(user, particularsDto: UpdateUserDto) {
+    const particularsPo = {
+      name: particularsDto.name,
+      email: particularsDto.email,
+      phone: particularsDto.phone,
+    };
+    const newParticulars = this.userParticulars.merge(
+      user.particulars,
+      particularsPo,
+    );
+    await this.userParticulars.save(newParticulars);
+  }
+
+  async remove(id: number) {
+    const user = await this.usersRepository.findOne({
+      where: { id: id },
+      relations: ['particulars'],
+    });
+    if (!user) {
+      throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
+    }
+    try {
+      // 删除用户详细信息
+      if (user.particulars) {
+        await this.userParticulars.remove(user.particulars);
+      }
+
+      // 删除用户
+      await this.usersRepository.remove(user);
+      return '删除成功';
+    } catch {
+      throw new HttpException('删除失败', HttpStatus.BAD_REQUEST);
+    }
   }
 }
