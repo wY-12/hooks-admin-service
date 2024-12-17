@@ -1,5 +1,11 @@
 // src/token.guard.ts
-import { Injectable, CanActivate, ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as jwt from 'jsonwebtoken';
 import { ConfigService } from '@nestjs/config';
@@ -7,7 +13,10 @@ import { TOKEN_METADATA_KEY } from './token.decorator';
 
 @Injectable()
 export class TokenGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector, private readonly configService: ConfigService) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly configService: ConfigService,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
@@ -15,10 +24,10 @@ export class TokenGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    const requiresToken = this.reflector.getAllAndOverride<boolean>(TOKEN_METADATA_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const requiresToken = this.reflector.getAllAndOverride<boolean>(
+      TOKEN_METADATA_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     if (isPublic || !requiresToken) {
       return true;

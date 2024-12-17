@@ -1,5 +1,5 @@
-import { User } from 'src/user/entities/user.entity';
-import { Column, Entity, JoinColumn, OneToOne, PrimaryColumn } from 'typeorm';
+import { Particulars } from 'src/user/entities/particulars.entity';
+import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
 
 @Entity()
 export class Role {
@@ -12,7 +12,6 @@ export class Role {
   @Column('json')
   perm: string[];
 
-  @OneToOne(() => User)
-  @JoinColumn()
-  user: User;
+  @OneToMany(() => Particulars, (particulars) => particulars.role)
+  particulars: Particulars[];
 }

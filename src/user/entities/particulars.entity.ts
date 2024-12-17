@@ -1,6 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, OneToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  OneToOne,
+  JoinColumn,
+  ManyToOne,
+} from 'typeorm';
 import { User } from 'src/user/entities/user.entity';
-
+import { Role } from 'src/role/entities/role.entity';
 @Entity()
 export class Particulars {
   @PrimaryGeneratedColumn()
@@ -17,4 +24,16 @@ export class Particulars {
   @OneToOne(() => User)
   @JoinColumn()
   user: User;
+
+  @ManyToOne(() => Role, (role) => role.id)
+  role: Role;
+
+  constructor(role?: Role) {
+    if (!role) {
+      this.role = new Role();
+      this.role.id = 2; // 设置默认角色ID
+    } else {
+      this.role = role;
+    }
+  }
 }
