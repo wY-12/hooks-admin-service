@@ -8,10 +8,12 @@ import {
   Delete,
   Query,
   Headers,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Token } from '../commit/token.decorator';
 
 @Controller('user')
 export class UserController {
@@ -22,26 +24,45 @@ export class UserController {
     return this.userService.create(createUserDto);
   }
 
+  @Post('/login')
+  login(@Body() loginDto: any) {
+    console.log(loginDto);
+    return this.userService.login(loginDto);
+  }
+
   @Get()
+  @Token()
   findAll(@Query() query: { pageNum: number; pageSize: number }) {
     return this.userService.findAll(query.pageNum, query.pageSize);
   }
 
   @Get(':id')
+  @Token()
   findOne(@Param('id') id: number) {
     return this.userService.findOne(id);
   }
 
-  @Post(':id')
+  @Post('/changePw/:id')
+  @Token()
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Headers('Authorization') userId: string,
+    @Headers('Token') userId: string,
   ) {
     return this.userService.update(+userId, +id, updateUserDto);
   }
+  @Post('/particulars/:id')
+  @Token()
+  updateParticulars(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+    @Headers('Token') userId: string,
+  ) {
+    return this.userService.updateParticulars(+userId, +id, updateUserDto);
+  }
 
   @Delete(':id')
+  @Token()
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }

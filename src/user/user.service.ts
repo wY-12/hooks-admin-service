@@ -3,9 +3,10 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
-import { getConnection, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Particulars } from './entities/particulars.entity';
-
+import * as bcryptjs from 'bcryptjs';
+import { JwtService } from '@nestjs/jwt';
 @Injectable()
 export class UserService {
   constructor(
@@ -13,17 +14,18 @@ export class UserService {
     private usersRepository: Repository<User>,
     @InjectRepository(Particulars)
     private userParticulars: Repository<Particulars>,
+    private readonly JwtService: JwtService,
   ) {}
   async create(createUserDto: CreateUserDto) {
     const { password, username, name, email, phone } = createUserDto;
 
     try {
       // 创建 User 实体，并关联 Particulars
+      const hashedPassword = bcryptjs.hashSync(password, 10);
       const user = this.usersRepository.create({
-        password,
+        password: hashedPassword,
         username,
       });
-
       // 保存 User 实体
       await this.usersRepository.save(user);
       // 创建 Particulars 实体
@@ -42,6 +44,7 @@ export class UserService {
           cause: error,
         });
       }
+      console.log(error);
       throw new HttpException(
         '创建用户失败',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -101,20 +104,34 @@ export class UserService {
     const newUser = this.usersRepository.merge(user, userPo);
     await this.usersRepository.save(newUser);
     // await this.updateParticulars(user, updateUserDto);
-    return '更新成功';
+    return [];
   }
 
-  async updateParticulars(user, particularsDto: UpdateUserDto) {
+  async updateParticulars(
+    userId: number,
+    id: number,
+    updateUserDto: UpdateUserDto,
+  ) {
+    if (id !== userId) {
+      throw new HttpException('用户ID不匹配', HttpStatus.BAD_REQUEST);
+    }
+    const particulars = await this.userParticulars.findOne({
+      where: { user: { id: id } }, // 修改这里
+    });
+    if (!particulars) {
+      throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
+    }
     const particularsPo = {
-      name: particularsDto.name,
-      email: particularsDto.email,
-      phone: particularsDto.phone,
+      name: updateUserDto.name,
+      email: updateUserDto.email,
+      phone: updateUserDto.phone,
     };
     const newParticulars = this.userParticulars.merge(
-      user.particulars,
+      particulars,
       particularsPo,
     );
     await this.userParticulars.save(newParticulars);
+    return particulars;
   }
 
   async remove(id: number) {
@@ -134,8 +151,39 @@ export class UserService {
       // 删除用户
       await this.usersRepository.remove(user);
       return '删除成功';
-    } catch {
+    } catch (error) {
       throw new HttpException('删除失败', HttpStatus.BAD_REQUEST);
     }
+  }
+  async login(loginDto: any) {
+    try {
+      const { username, password } = loginDto;
+      const user = await this.usersRepository.findOne({
+        where: { username: username },
+      });
+      if (!user) {
+        throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
+      }
+      const compareRes: boolean = bcryptjs.compareSync(
+        password,
+        user.password,
+      );
+      if (!compareRes) {
+        throw new HttpException('密码错误', HttpStatus.BAD_REQUEST);
+      }
+      const payload = { username: user.username };
+  
+      return {
+        token: this.JwtService.sign(payload),
+        msg: '登录成功',
+      };
+    } catch (error) {
+      console.log(error)
+      return {
+        data:[],
+        msg: '登录失败',
+      }
+    }
+
   }
 }

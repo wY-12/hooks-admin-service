@@ -9,7 +9,7 @@ import { ConfigEnum } from './enum/config.enum';
 import { UserModule } from './user/user.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { RoleModule } from './role/role.module';
-
+import { TokenGuard } from './commit/token.guard';
 const envFilePath = `.env.${process.env.NODE_ENV}`;
 @Module({
   imports: [
@@ -28,6 +28,7 @@ const envFilePath = `.env.${process.env.NODE_ENV}`;
         DB_TYPE: Joi.string().valid('mysql', 'postgres'),
         DB_SYNCHRONIZE: Joi.boolean().default(false),
         DB_DATABASE: Joi.string().required(),
+        JWT_SECRET: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRootAsync({
@@ -42,7 +43,8 @@ const envFilePath = `.env.${process.env.NODE_ENV}`;
           password: configService.get(ConfigEnum.DB_PASSWORD),
           database: configService.get(ConfigEnum.DB_DATABASE),
           entities: [__dirname + '/**/*.entity{.ts,.js}'],
-          synchronize: configService.get(ConfigEnum.DB_SYNCHRONIZE),
+          synchronize: true,
+          charset: 'utf8mb4',
         }) as TypeOrmModuleOptions,
     }),
     CacheModule.register(),
@@ -50,6 +52,12 @@ const envFilePath = `.env.${process.env.NODE_ENV}`;
     RoleModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: 'APP_GUARD',
+      useClass: TokenGuard,
+    },
+  ],
 })
 export class AppModule {}

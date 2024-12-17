@@ -27,10 +27,9 @@ export class ValidationExceptionFilter implements ExceptionFilter {
           : response.toString();
       }
     }
-
     response.status(status).json({
-      statusCode: -1,
-      message: message,
+      code: -1,
+      message: message || 'Internal server error',
     });
   }
 
