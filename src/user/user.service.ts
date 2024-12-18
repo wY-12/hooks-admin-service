@@ -164,26 +164,23 @@ export class UserService {
       if (!user) {
         throw new HttpException('用户不存在', HttpStatus.NOT_FOUND);
       }
-      const compareRes: boolean = bcryptjs.compareSync(
-        password,
-        user.password,
-      );
+      const compareRes: boolean = bcryptjs.compareSync(password, user.password);
       if (!compareRes) {
         throw new HttpException('密码错误', HttpStatus.BAD_REQUEST);
       }
-      const payload = { username: user.username };
-  
+      const payload = { username: user.username, id: user.id };
+
       return {
         token: this.JwtService.sign(payload),
         msg: '登录成功',
       };
     } catch (error) {
-      console.log(error)
-      return {
-        data:[],
-        msg: '登录失败',
-      }
+      console.log(error);
+      throw new HttpException('登录失败', HttpStatus.BAD_REQUEST);
+      // return {
+      //   data: [],
+      //   msg: '登录失败',
+      // };
     }
-
   }
 }

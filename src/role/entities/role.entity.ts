@@ -1,17 +1,20 @@
-import { Particulars } from 'src/user/entities/particulars.entity';
-import { Column, Entity, OneToMany, PrimaryColumn } from 'typeorm';
+import { User } from 'src/user/entities/user.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Role {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn()
   id: number;
 
   @Column()
   name: string;
 
   @Column('json')
-  perm: string[];
+  menu: string[];
 
-  @OneToMany(() => Particulars, (particulars) => particulars.role)
-  particulars: Particulars[];
+  @Column('json')
+  button: object;
+
+  @OneToMany(() => User, (user) => user.role)
+  User: User[];
 }

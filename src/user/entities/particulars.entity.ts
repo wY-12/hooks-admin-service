@@ -25,15 +25,5 @@ export class Particulars {
   @JoinColumn()
   user: User;
 
-  @ManyToOne(() => Role, (role) => role.id)
-  role: Role;
 
-  constructor(role?: Role) {
-    if (!role) {
-      this.role = new Role();
-      this.role.id = 2; // 设置默认角色ID
-    } else {
-      this.role = role;
-    }
-  }
 }

@@ -13,7 +13,7 @@ import {
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Token } from '../commit/token.decorator';
+import { Token, TokenParam } from '../commit/token.decorator';
 
 @Controller('user')
 export class UserController {
@@ -26,7 +26,6 @@ export class UserController {
 
   @Post('/login')
   login(@Body() loginDto: any) {
-    console.log(loginDto);
     return this.userService.login(loginDto);
   }
 
@@ -47,18 +46,18 @@ export class UserController {
   update(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Headers('Token') userId: string,
+    @TokenParam() user: any,
   ) {
-    return this.userService.update(+userId, +id, updateUserDto);
+    return this.userService.update(+user.id, +id, updateUserDto);
   }
   @Post('/particulars/:id')
   @Token()
   updateParticulars(
     @Param('id') id: string,
     @Body() updateUserDto: UpdateUserDto,
-    @Headers('Token') userId: string,
+    @TokenParam() user: any,
   ) {
-    return this.userService.updateParticulars(+userId, +id, updateUserDto);
+    return this.userService.updateParticulars(+user.id, +id, updateUserDto);
   }
 
   @Delete(':id')
@@ -66,4 +65,5 @@ export class UserController {
   remove(@Param('id') id: string) {
     return this.userService.remove(+id);
   }
+
 }
